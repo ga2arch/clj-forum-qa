@@ -39,8 +39,13 @@
 (defn get-username [data]
   (first (html/select data [:a.username :> :strong :> html/text-node])))
 
+(defn get-posts [url]
+  (let [data (fetch-url url)
+        raw (html/select data [:ol.posts :> :li])]
+    raw))
+
 (defn get-posts-by-range [from to]
-  (apply concat (pmap #(get-posts-raw (str/join [url %])) (range from to))))
+  (apply concat (pmap #(get-posts (str/join [url %])) (range from to))))
 
 (defn get-qa-from-post [post]
   (let [content (:content (first (html/select post [:blockquote.postcontent])))]
@@ -63,4 +68,4 @@
   (spit "data.txt"
         (str/join
          (map to-str
-              (get-qas (get-posts-by-range 50 51))))))
+              (get-qas (get-posts-by-range 47 52))))))
