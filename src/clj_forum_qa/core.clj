@@ -5,7 +5,7 @@
 
 ;;; Const
 
-(def url "http://forum.bodybuilding.com/showthread.php?t=157587143&page=")
+(def url "http://forum.bodybuilding.com/showthread.php?t=146471313&page=")
 
 ;;; Utils
 
@@ -59,6 +59,7 @@
                     nqa (assoc qa :a a)]
                 (conj (pop qas) nqa))
               qas))) [] content)))
+
 (defn get-qas [posts]
   (first
    (map get-qa-from-post
