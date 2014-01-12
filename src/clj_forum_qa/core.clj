@@ -34,32 +34,52 @@
   (apply concat (pmap #(get-posts-raw (str/join [url %])) (range from to))))
 
 (defn to-str [post]
-  (str/join ["Q: " (:q post) "\n\n" "A: " (:a post) "\n\n"]))
+  (str/join ["Q: " (sanitize (:q post)) "\n\n" "A: " (:a post) "\n\n"]))
 
+(defn sanitize [text]
+  (first
+   (str/split
+    (second
+     (str/split
+      (subs text 25)
+      #"\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t"))
+    #"\n\t\t\t\n\t\t\n\t")))
+
+(defn rstrip-nt [text]
+  (str/join
+   (reverse
+    (drop-while
+     #(or (= \tab %) (= \newline %))
+     (reverse text)))))
+
+(defn fix-last [posts]
+  (let [la (last post)
+        a (:a post)
+        na (rstrip-nt a)
+        nla (assoc la :a na)]
+    (conj (pop posts) nla)))
 
 (defn get-qa-from-post [post]
   (let [content (:content (first (html/select post [:blockquote.postcontent])))]
     (reduce (fn [qas e]
           (if (= (get-in e [:attrs :class]) "bbcode_container")
-            (let [q (strip (html/text e) "\t")]
+            (let [q (html/text e)]
               (conj qas {:q q :a ""}))
             (if (and (string? e) (> (count qas) 0))
               (let [qa (last qas)
-                    a (str (:a qa) e)
+                    a (str (:a qa) (rstrip-nt e))
                     nqa (assoc qa :a a)]
                 (conj (pop qas) nqa))
               qas))) [] content)))
 
 (defn get-qas [posts]
-  (map get-qa-from-post
-         (filter #(= (get-username %) "Kelei") posts)))
+  (first
+   (map get-qa-from-post
+         (filter #(= (get-username %) "Kelei") posts))))
 
 (defn -main []
   (spit "data.txt"
         (str/join
          (map to-str
-              (filter-by-username "Kelei"
-                                  (get-posts-by-range 50 51))))))
+              (get-qas (get-posts-by-range 50 51))))))
 ;(-main)
-
-(def posts (get-posts-by-range 51 52))
