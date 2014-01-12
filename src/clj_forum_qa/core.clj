@@ -3,10 +3,6 @@
             [clojure.string :as str]
             [clojure.java.io :as io]))
 
-;;; Types
-
-(defrecord Post [username question answer])
-
 ;;; Const
 
 (def url "http://forum.bodybuilding.com/showthread.php?t=157587143&page=")
@@ -19,22 +15,12 @@
 (defn strip [coll chars]
   (apply str (remove #((set chars) %) coll)))
 
-;;; Main
-
-
-(defn get-username [data]
-  (first (html/select data [:a.username :> :strong :> html/text-node])))
-
-(defn get-post-number [data]
-  (str/replace
-    (-> (html/select data [:span.nodecontrols :> :a])
-         first :attrs :name) "post" ""))
-
-(defn get-posts-by-range [from to]
-  (apply concat (pmap #(get-posts-raw (str/join [url %])) (range from to))))
-
-(defn to-str [post]
-  (str/join ["Q: " (sanitize (:q post)) "\n\n" "A: " (:a post) "\n\n"]))
+(defn rstrip-nt [text]
+  (str/join
+   (reverse
+    (drop-while
+     #(or (= \tab %) (= \newline %))
+     (reverse text)))))
 
 (defn sanitize [text]
   (first
@@ -45,19 +31,16 @@
       #"\n\t\t\t\t\t\n\t\t\t\t\n\t\t\t\t"))
     #"\n\t\t\t\n\t\t\n\t")))
 
-(defn rstrip-nt [text]
-  (str/join
-   (reverse
-    (drop-while
-     #(or (= \tab %) (= \newline %))
-     (reverse text)))))
+(defn to-str [post]
+  (str/join ["Q: " (sanitize (:q post)) "\n\n" "A: " (:a post) "\n\n"]))
 
-(defn fix-last [posts]
-  (let [la (last post)
-        a (:a post)
-        na (rstrip-nt a)
-        nla (assoc la :a na)]
-    (conj (pop posts) nla)))
+;;; Main
+
+(defn get-username [data]
+  (first (html/select data [:a.username :> :strong :> html/text-node])))
+
+(defn get-posts-by-range [from to]
+  (apply concat (pmap #(get-posts-raw (str/join [url %])) (range from to))))
 
 (defn get-qa-from-post [post]
   (let [content (:content (first (html/select post [:blockquote.postcontent])))]
@@ -71,7 +54,6 @@
                     nqa (assoc qa :a a)]
                 (conj (pop qas) nqa))
               qas))) [] content)))
-
 (defn get-qas [posts]
   (first
    (map get-qa-from-post
@@ -82,4 +64,3 @@
         (str/join
          (map to-str
               (get-qas (get-posts-by-range 50 51))))))
-;(-main)
