@@ -5,7 +5,7 @@
 
 ;;; Const
 
-(def url "http://forum.bodybuilding.com/showthread.php?t=146471313&page=")
+(def url "http://forum.bodybuilding.com/showthread.php?t=157587143&page=")
 
 ;;; Utils
 
@@ -61,12 +61,13 @@
               qas))) [] content)))
 
 (defn get-qas [posts]
-  (first
+  (flatten
+   (filter #(not (empty? %))
    (map get-qa-from-post
-         (filter #(= (get-username %) "Kelei") posts))))
+         (filter #(= (get-username %) "Kelei") posts)))))
 
 (defn -main []
   (spit "data.txt"
         (str/join
          (map to-str
-              (get-qas (get-posts-by-range 47 52))))))
+              (get-qas (get-posts-by-range 1 53))))))
